@@ -1,0 +1,28 @@
+{
+  "name": "beaker-delta-crdts-playground",
+  "version": "0.0.1",
+  "description": "Beaker + Delta CRDTs?",
+  "main": "index.js",
+  "scripts": {
+    "prepare": "snowpack"
+  },
+  "dependencies": {
+    "htm": "^3.0.3",
+    "react": "npm:@jimpick/react-experimental@16.13.0-0",
+    "react-dom": "npm:@jimpick/react-dom-experimental@16.13.0-0"
+  },
+  "keywords": [],
+  "author": "Jim Pick (@jimpick)",
+  "license": "MIT/Apache-2 (Permissive License Stack)",
+  "devDependencies": {
+    "snowpack": "^1.7.1"
+  },
+  "snowpack": {
+    "webDependencies": [
+      "htm",
+      "htm/react",
+      "react",
+      "react-dom"
+    ]
+  }
+}
