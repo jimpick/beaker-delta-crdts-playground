@@ -7,6 +7,8 @@
     "prepare": "snowpack"
   },
   "dependencies": {
+    "@jimpick/delta-crdts-msgpack-codec": "^0.2.0-1",
+    "@jimpick/delta-crdts": "^0.10.3-3",
     "htm": "^3.0.3",
     "react": "npm:@jimpick/react-experimental@16.13.0-0",
     "react-dom": "npm:@jimpick/react-dom-experimental@16.13.0-0"
@@ -15,14 +17,7 @@
   "author": "Jim Pick (@jimpick)",
   "license": "MIT/Apache-2 (Permissive License Stack)",
   "devDependencies": {
+    "rollup-plugin-node-polyfills": "^0.2.1",
     "snowpack": "^1.7.1"
-  },
-  "snowpack": {
-    "webDependencies": [
-      "htm",
-      "htm/react",
-      "react",
-      "react-dom"
-    ]
   }
 }

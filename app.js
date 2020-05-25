@@ -3,7 +3,9 @@ import { html } from '/web_modules/htm/react.js'
 
 function Main (props) {
   return html`
-    <h1>React + HTM + Snowpack</h1>
+    <div>
+      <h1>React + HTM + Snowpack</h1>
+    </div>
   `
 }
 
