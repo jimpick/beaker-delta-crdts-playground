@@ -4,11 +4,10 @@
   "description": "Beaker + Delta CRDTs?",
   "main": "index.js",
   "scripts": {
-    "prepare": "snowpack"
+    "patch": "./patch.sh",
+    "publish": "rm -rf web_modules && snowpack && ./publish.sh"
   },
   "dependencies": {
-    "@jimpick/delta-crdts": "^0.10.3-3",
-    "@jimpick/delta-crdts-msgpack-codec": "^0.2.0-1",
     "delta-crdts": "^0.10.3",
     "delta-crdts-msgpack-codec": "^0.2.0",
     "htm": "^3.0.3",

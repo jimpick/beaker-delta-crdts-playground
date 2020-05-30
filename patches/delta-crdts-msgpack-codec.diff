@@ -1,20 +1,43 @@
+diff -urN node_modules.save/delta-crdts-msgpack-codec/package.json node_modules/delta-crdts-msgpack-codec/package.json
+--- node_modules.save/delta-crdts-msgpack-codec/package.json	2018-11-30 04:56:17.000000000 -0800
++++ node_modules/delta-crdts-msgpack-codec/package.json	2020-05-29 23:12:15.000000000 -0700
+@@ -3,6 +3,7 @@
+   "version": "0.2.0",
+   "description": "Msgpack codec for delta-crdts",
+   "main": "src/index.js",
++  "module": "src/index.js",
+   "scripts": {
+     "test": "mocha",
+     "lint": "standard"
+diff -urN node_modules.save/delta-crdts-msgpack-codec/src/index.js node_modules/delta-crdts-msgpack-codec/src/index.js
 --- node_modules.save/delta-crdts-msgpack-codec/src/index.js	2018-11-30 04:56:17.000000000 -0800
-+++ node_modules/delta-crdts-msgpack-codec/src/index.js	2020-05-24 18:18:11.000000000 -0700
-@@ -26,10 +26,16 @@
++++ node_modules/delta-crdts-msgpack-codec/src/index.js	2020-05-29 23:17:45.000000000 -0700
+@@ -1,6 +1,9 @@
+ 'use strict'
+ 
+-const msgpack = require('msgpack5')()
++import msgpack5 from 'msgpack5'
++
++const msgpack = msgpack5()
++
+ msgpack.register(0x40, Map, encodeMap, decodeMap)
+ msgpack.register(0x41, Set, encodeSet, decodeSet)
+ 
+@@ -26,10 +29,16 @@
    return new Set(msgpack.decode(buf))
  }
  
 -exports.encode = function encode (value) {
-+function encode (value) {
++export function encode (value) {
    return msgpack.encode(value)
  }
  
 -exports.decode = function encode (value) {
-+function decode (value) {
++export function decode (value) {
    return msgpack.decode(value)
  }
 +
-+module.exports = {
++export default {
 +  encode,
 +  decode
 +}

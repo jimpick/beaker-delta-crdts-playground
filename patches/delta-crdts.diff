@@ -1,0 +1,12 @@
+diff -urN node_modules/delta-crdts.save/src/index.js node_modules/delta-crdts/src/index.js
+--- node_modules/delta-crdts.save/src/index.js	2020-05-29 23:10:24.000000000 -0700
++++ node_modules/delta-crdts/src/index.js	2020-05-29 23:09:30.000000000 -0700
+@@ -21,7 +21,7 @@
+   rwlwwset: require('./rwlwwset'),
+   lwwreg: require('./lwwreg'),
+   rga: require('./rga'),
+-  ormap: require('./ormap')
++  // ormap: require('./ormap')
+ }
+ 
+ module.exports.type = (typeName) => {

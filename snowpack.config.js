@@ -4,7 +4,7 @@ module.exports = {
     "htm/react",
     "react",
     "react-dom",
-    "@jimpick/delta-crdts-msgpack-codec",
+    "delta-crdts-msgpack-codec",
     "delta-crdts"
   ],
   rollup: {
