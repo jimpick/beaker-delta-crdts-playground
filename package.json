@@ -13,7 +13,8 @@
     "htm": "^3.0.3",
     "react": "npm:@jimpick/react-experimental@16.13.0-0",
     "react-dom": "npm:@jimpick/react-dom-experimental@16.13.0-0",
-    "rollup-plugin-re": "^1.0.7"
+    "rollup-plugin-re": "^1.0.7",
+    "text-diff": "^1.0.1"
   },
   "keywords": [],
   "author": "Jim Pick (@jimpick)",
