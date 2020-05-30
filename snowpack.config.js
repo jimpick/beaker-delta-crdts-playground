@@ -5,12 +5,16 @@ module.exports = {
     "react",
     "react-dom",
     "@jimpick/delta-crdts",
-    "@jimpick/delta-crdts-msgpack-codec",
-    "msgpack5"
+    "@jimpick/delta-crdts-msgpack-codec"
   ],
   rollup: {
-    external: ['readable-stream'],
     plugins: [
+      require('@rollup/plugin-replace')({
+        values: {
+          'readable-stream/transform': '_stream_transform',
+          'readable-stream/duplex': '_stream_duplex'
+        }
+      }),
       require('rollup-plugin-node-polyfills')()
     ]
   }
