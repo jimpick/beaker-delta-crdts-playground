@@ -1343,7 +1343,7 @@ define-properties@^1.1.2, define-properties@^1.1.3:
   dependencies:
     object-keys "^1.0.12"
 
-delta-crdts-msgpack-codec@~0.2.0:
+delta-crdts-msgpack-codec@^0.2.0, delta-crdts-msgpack-codec@~0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/delta-crdts-msgpack-codec/-/delta-crdts-msgpack-codec-0.2.0.tgz#207a8d751c5b0280dcb3576f81cc48c0c6e32d4c"
   integrity sha512-NU6GK9UEHIPtfYhU3txoniuqfKNjOaeIFQGQw2p4fBJTfv19p6SK4sArS0mV/TXGdBNfDsEwQNHvdWpR2Ntd4A==
@@ -1352,6 +1352,16 @@ delta-crdts-msgpack-codec@~0.2.0:
     dirty-chai "^2.0.1"
     mocha "^5.2.0"
     msgpack5 "^4.2.1"
+
+delta-crdts@^0.10.3:
+  version "0.10.3"
+  resolved "https://registry.yarnpkg.com/delta-crdts/-/delta-crdts-0.10.3.tgz#4088b2e9a08c5d4b3b461a58db3d6978121faaaa"
+  integrity sha512-6ZmwSPdajd5o9cG5e9auWil9ZZj+rZ8gKomM4mo+lPJLZ834jV4VPl8yzhJCojB8en0mpeMoZj0R1qlDcBfb1Q==
+  dependencies:
+    array.prototype.flatmap "^1.2.1"
+    delta-crdts-msgpack-codec "~0.2.0"
+    hash-it "^4.0.4"
+    immutable "^4.0.0-rc.12"
 
 diff@3.5.0:
   version "3.5.0"

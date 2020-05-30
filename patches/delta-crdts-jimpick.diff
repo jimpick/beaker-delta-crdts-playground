@@ -1,0 +1,125 @@
+diff -urN node_modules/delta-crdts/src/index.js node_modules/@jimpick/delta-crdts/src/index.js
+--- node_modules/delta-crdts/src/index.js	2020-05-24 13:11:33.000000000 -0700
++++ node_modules/@jimpick/delta-crdts/src/index.js	2020-05-24 19:32:21.000000000 -0700
+@@ -2,10 +2,6 @@
+ 
+ const Type = require('./type')
+ 
+-module.exports = (typeName) => {
+-  return Type(module.exports.type(typeName))
+-}
+-
+ const types = {
+   gcounter: require('./gcounter'),
+   pncounter: require('./pncounter'),
+@@ -20,19 +16,30 @@
+   dwflag: require('./dwflag'),
+   rwlwwset: require('./rwlwwset'),
+   lwwreg: require('./lwwreg'),
+-  rga: require('./rga'),
+-  ormap: require('./ormap')
++  rga: require('./rga')
++  // ormap: require('./ormap') // Circular reference
+ }
+ 
+-module.exports.type = (typeName) => {
++function type (typeName) {
++  // const type = typeName === 'ormap' ? require('./ormap') : types[typeName]
+   const type = types[typeName]
+   if (!type) { throw new Error(`unknown type named ${typeName}`) }
+   return type
+ }
+ 
+-module.exports.define = (typeName, impl) => {
+-  if (types[typeName]) {
++function define (typeName, impl) {
++  if (types[typeName] || typeName === 'ormap') {
+     throw new Error(`${typeName} is already defined as a type`)
+   }
+   types[typeName] = impl
+ }
++
++function create (typeName) {
++  return Type(type(typeName))
++}
++
++module.exports = {
++  type,
++  define,
++  create
++}
+diff -urN node_modules/delta-crdts/src/lexjoin.js node_modules/@jimpick/delta-crdts/src/lexjoin.js
+--- node_modules/delta-crdts/src/lexjoin.js	2020-05-24 13:11:33.000000000 -0700
++++ node_modules/@jimpick/delta-crdts/src/lexjoin.js	2020-05-24 19:32:21.000000000 -0700
+@@ -6,11 +6,14 @@
+ 
+   if (!greaterThan) { greaterThan = defaultGreaterThan }
+ 
+-  if (greaterThan(l[0], r[0])) { return l }
+-  if (greaterThan(r[0], l[0])) { return r }
++  const [lh, ...lt] = l
++  const [rh, ...rt] = r
++
++  if (greaterThan(lh, rh)) { return l }
++  if (greaterThan(rh, lh)) { return r }
+ 
+   // First is equal, so join second
+-  return [l[0], join(l[1], r[1])]
++  return [lh, ...join(lt, rt)]
+ }
+ 
+ function defaultGreaterThan (a, b) {
+diff -urN node_modules/delta-crdts/src/ormap.js node_modules/@jimpick/delta-crdts/src/ormap.js
+--- node_modules/delta-crdts/src/ormap.js	2020-05-24 13:11:33.000000000 -0700
++++ node_modules/@jimpick/delta-crdts/src/ormap.js	2020-05-24 19:32:21.000000000 -0700
+@@ -3,7 +3,7 @@
+ 
+ const DotMap = require('./dot-map')
+ const CausalContext = require('./causal-context')
+-const CRDT = require('./')
++const CRDT = require('.')
+ 
+ module.exports = {
+   initial () { return new DotMap() },
+diff -urN node_modules/delta-crdts/src/rwlwwset.js node_modules/@jimpick/delta-crdts/src/rwlwwset.js
+--- node_modules/delta-crdts/src/rwlwwset.js	2020-05-24 13:11:33.000000000 -0700
++++ node_modules/@jimpick/delta-crdts/src/rwlwwset.js	2020-05-24 19:32:21.000000000 -0700
+@@ -1,6 +1,7 @@
+ 'use strict'
+ 
+ const lexjoin = require('./lexjoin')
++const objectKey = require('./object-key')
+ 
+ module.exports = {
+   initial () { return new Map() },
+@@ -22,7 +23,7 @@
+   },
+   value (s) {
+     const res = new Set()
+-    for (let [value, [, b]] of s) {
++    for (let [, [, b, value]] of s) {
+       if (!b) {
+         res.add(value)
+       }
+@@ -37,7 +38,8 @@
+ 
+ function addRemove (s, ts, val, b) {
+   const res = new Map()
+-  res.set(val, [ts, b])
++  const key = objectKey(val)
++  res.set(key, [ts, b, val])
+ 
+   return res
+ }
+diff -urN node_modules/delta-crdts/src/type.js node_modules/@jimpick/delta-crdts/src/type.js
+--- node_modules/delta-crdts/src/type.js	2020-05-24 13:11:33.000000000 -0700
++++ node_modules/@jimpick/delta-crdts/src/type.js	2020-05-24 19:32:21.000000000 -0700
+@@ -3,7 +3,7 @@
+ const EventEmitter = require('events')
+ const { isCollection } = require('immutable')
+ 
+-module.exports = (Type) => {
++module.exports = (Type, types) => {
+   return (id) => {
+     let state = Type.initial()
+     const ret = new EventEmitter()

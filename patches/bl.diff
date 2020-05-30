@@ -1,0 +1,9 @@
+--- node_modules/bl/bl.js	2019-02-04 19:39:45.000000000 -0800
++++ node_modules.save/bl/bl.js	2020-05-25 14:28:49.000000000 -0700
+@@ -1,5 +1,5 @@
+ 'use strict'
+-var DuplexStream = require('readable-stream').Duplex
++var DuplexStream = require('_stream_duplex')
+   , util         = require('util')
+   , Buffer       = require('safe-buffer').Buffer
+ 

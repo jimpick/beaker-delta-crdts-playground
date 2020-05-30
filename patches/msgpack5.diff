@@ -1,0 +1,11 @@
+--- node_modules/msgpack5/lib/streams.js	2018-11-30 04:56:18.000000000 -0800
++++ node_modules.save/msgpack5/lib/streams.js	2020-05-25 14:28:13.000000000 -0700
+@@ -1,6 +1,7 @@
+ 'use strict'
+ 
+-var Transform = require('readable-stream').Transform
++// var Transform = require('readable-stream').Transform
++var Transform = require('_stream_transform')
+ var inherits = require('inherits')
+ var bl = require('bl')
+ 

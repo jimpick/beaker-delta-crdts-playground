@@ -1,0 +1,21 @@
+--- node_modules.save/delta-crdts-msgpack-codec/src/index.js	2018-11-30 04:56:17.000000000 -0800
++++ node_modules/delta-crdts-msgpack-codec/src/index.js	2020-05-24 18:18:11.000000000 -0700
+@@ -26,10 +26,16 @@
+   return new Set(msgpack.decode(buf))
+ }
+ 
+-exports.encode = function encode (value) {
++function encode (value) {
+   return msgpack.encode(value)
+ }
+ 
+-exports.decode = function encode (value) {
++function decode (value) {
+   return msgpack.decode(value)
+ }
++
++module.exports = {
++  encode,
++  decode
++}
++
