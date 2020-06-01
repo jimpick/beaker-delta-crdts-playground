@@ -8,6 +8,7 @@
     "publish": "rm -rf web_modules && snowpack && ./publish.sh"
   },
   "dependencies": {
+    "buffer-es6": "^4.9.3",
     "delta-crdts": "^0.10.3",
     "delta-crdts-msgpack-codec": "^0.2.0",
     "htm": "^3.0.3",

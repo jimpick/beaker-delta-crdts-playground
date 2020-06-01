@@ -6,7 +6,8 @@ module.exports = {
     "react-dom",
     "delta-crdts-msgpack-codec",
     "delta-crdts",
-    "text-diff"
+    "text-diff",
+    "buffer-es6"
   ],
   rollup: {
     plugins: [

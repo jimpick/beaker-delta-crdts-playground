@@ -7,6 +7,7 @@ rm -rf node_modules
 yarn
 npm run patch
 npm run publish
+
 ```
 
 # License
