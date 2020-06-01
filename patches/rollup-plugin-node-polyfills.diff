@@ -1,0 +1,15 @@
+diff -urN node_modules/rollup-plugin-node-polyfills.save/polyfills/buffer-es6.js node_modules/rollup-plugin-node-polyfills/polyfills/buffer-es6.js
+--- node_modules/rollup-plugin-node-polyfills.save/polyfills/buffer-es6.js	2020-05-24 17:52:00.000000000 -0700
++++ node_modules/rollup-plugin-node-polyfills/polyfills/buffer-es6.js	2020-05-31 19:51:03.000000000 -0700
+@@ -567,9 +567,11 @@
+   var pos = 0;
+   for (i = 0; i < list.length; ++i) {
+     var buf = list[i];
++    /*
+     if (!internalIsBuffer(buf)) {
+       throw new TypeError('"list" argument must be an Array of Buffers')
+     }
++    */
+     buf.copy(buffer, pos);
+     pos += buf.length;
+   }
