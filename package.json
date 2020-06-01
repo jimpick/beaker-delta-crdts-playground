@@ -12,6 +12,7 @@
     "delta-crdts": "^0.10.3",
     "delta-crdts-msgpack-codec": "^0.2.0",
     "htm": "^3.0.3",
+    "lodash.clonedeep": "^4.5.0",
     "react": "npm:@jimpick/react-experimental@16.13.0-0",
     "react-dom": "npm:@jimpick/react-dom-experimental@16.13.0-0",
     "rollup-plugin-re": "^1.0.7",

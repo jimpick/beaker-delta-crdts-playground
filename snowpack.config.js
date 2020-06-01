@@ -7,7 +7,8 @@ module.exports = {
     "delta-crdts-msgpack-codec",
     "delta-crdts",
     "text-diff",
-    "buffer-es6"
+    "buffer-es6",
+    "lodash.clonedeep"
   ],
   rollup: {
     plugins: [
