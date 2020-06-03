@@ -9,7 +9,7 @@ import { Buffer } from '/web_modules/buffer-es6.js'
 const RGA = CRDTs('rga')
 const RGAType = CRDTs.type('rga')
 
-function MakeRgaReplicaFromKey (key) {
+function makeRgaReplicaFromKey (key) {
   const shortKey = Buffer.from(key.slice(-6), 'hex')
   return RGA(shortKey)
 }
@@ -33,7 +33,7 @@ function Main () {
         // jpimac
         key = info.key
         setKey(key)
-        setReplica(MakeRgaReplicaFromKey(key))
+        setReplica(makeRgaReplicaFromKey(key))
         setOriginator(true)
         setReplicaDir('/replicas/jpimac/deltas')
       } else {
@@ -49,7 +49,7 @@ function Main () {
         console.log('Jim info', info)
         if (info.writable) {
           setKey(key)
-          setReplica(MakeRgaReplicaFromKey(key))
+          setReplica(makeRgaReplicaFromKey(key))
           setReplicaDir('/replicas/jpmbp2/deltas')
         } else {
           setError("Error: Couldn't identify writable local replica")
@@ -63,7 +63,7 @@ function Main () {
     replica
   ])
 
-  const crdtBinSize = useMemo(() => replica && encode(replica.state()), [
+  const crdtEncoded = useMemo(() => replica && encode(replica.state()), [
     replica
   ])
 
@@ -80,7 +80,7 @@ function Main () {
 
   const [draftReplica, draftDeltas, draftBatch] = useMemo(() => {
     if (!replica) return [null, null, null]
-    const draftReplica = MakeRgaReplicaFromKey(key)
+    const draftReplica = makeRgaReplicaFromKey(key)
     draftReplica.apply(replica.state())
     const deltas = []
     console.log('Jim0', replica.value().join(''), draftReplica.value().join(''))
@@ -118,15 +118,14 @@ function Main () {
     [draftReplica]
   )
 
-  const draftCrdtBinSize = useMemo(
+  const draftCrdtEncoded = useMemo(
     () => draftReplica && encode(draftReplica.state()),
     [draftReplica]
   )
 
-  const draftBatchBinSize = useMemo(
-    () => draftBatch && encode(draftBatch),
-    [draftBatch]
-  )
+  const draftBatchEncoded = useMemo(() => draftBatch && encode(draftBatch), [
+    draftBatch
+  ])
 
   return html`
     <div>
@@ -147,8 +146,9 @@ function Main () {
       <div style=${{ marginBottom: '1rem' }}>
         State: ${state}<br />
         Originator? ${`${!!originator}`} <br />
+        Key: ${key} <br />
         Value: ${replica && JSON.stringify(crdtValue)} <br />
-        Binary Size (final state): ${crdtBinSize && crdtBinSize.length} <br />
+        Binary Size (final state): ${crdtEncoded && crdtEncoded.length} <br />
         Clock:
         ${clock &&
           html`
@@ -171,11 +171,23 @@ function Main () {
             Create Initial RGA Replica from index.md
           </button>
         `}
+      ${state === 'start' &&
+        html`
+          <button onClick=${load}>
+            Load Current State + Deltas
+          </button>
+        `}
 
       <div>
         ${state === 'initial' &&
           html`
-            <button onClick=${saveState}>Save State</button>
+            <button
+              onClick=${() => {
+                saveState(replica.state())
+              }}
+            >
+              Save State
+            </button>
           `}
       </div>
       <div>
@@ -197,15 +209,29 @@ function Main () {
             <h4>Draft</h4>
             <div>
             Value: ${draftReplica && JSON.stringify(draftCrdtValue)} <br />
-            Binary Size (final state): ${draftCrdtBinSize &&
-              draftCrdtBinSize.length} <br />
+            Binary Size (final state): ${draftCrdtEncoded &&
+              draftCrdtEncoded.length} <br />
             </div>
+            <button
+              onClick=${() => {
+                saveState(draftReplica.state())
+              }}
+            >
+              Save New State
+            </button>
             <h4>Batched Deltas</h4>
             <div>
             Deltas in batch: ${draftDeltas && draftDeltas.length} <br />
-            Binary Size (batched deltas): ${draftBatchBinSize &&
-              draftBatchBinSize.length} <br />
+            Binary Size (batched deltas): ${draftBatchEncoded &&
+              draftBatchEncoded.length} <br />
             </div>
+            <button
+              onClick=${() => {
+                saveDeltaBatch(draftBatchEncoded, clock)
+              }}
+            >
+              Save Delta Batch
+            </button>
           </${Fragment}>
         `}
       </div>
@@ -217,7 +243,7 @@ function Main () {
     const md = await beaker.hyperdrive.readFile('/replicas/jpimac/test.md')
     console.log('md', md)
     if (!replica) throw new Error('no replica!')
-    const draftReplica = MakeRgaReplicaFromKey(key)
+    const draftReplica = makeRgaReplicaFromKey(key)
     draftReplica.apply(replica.state())
     for (const char of md) {
       // Try insertAllAt?
@@ -228,7 +254,75 @@ function Main () {
     setDraft(draftReplica.value().join(''))
   }
 
-  async function saveState () {
+  async function load () {
+    console.log('Load')
+    const draftReplica = makeRgaReplicaFromKey(key)
+    const thisDrive = beaker.hyperdrive.drive()
+    const replicaDirs = await thisDrive.readdir('/replicas')
+    console.log('Replica dirs', replicaDirs)
+    const lastClock = {}
+    const deltasToApply = []
+    for (const dir of replicaDirs) {
+      const replicaDir = `/replicas/${dir}/deltas`
+      try {
+        const deltaFiles = await thisDrive.readdir(replicaDir)
+        console.log('deltaFiles', dir, deltaFiles)
+        const sortedFiles = deltaFiles
+          .map(num => parseInt(num, 10))
+          .filter(num => num > 0)
+          .sort()
+        console.log('sortedFiles', sortedFiles)
+        for (const fileNum of sortedFiles) {
+          const file = `${replicaDir}/${fileNum}`
+          const { metadata } = await thisDrive.stat(file)
+          const { type, ...clock } = metadata
+          const binary = await thisDrive.readFile(file, {
+            encoding: 'binary'
+          })
+          console.log('Type', replicaDir, file, type)
+          console.log('Binary', replicaDir, file, binary)
+          const stateOrDelta = decode(binary)
+          console.log('Decoded', replicaDir, file, stateOrDelta)
+          if (type === 'state') {
+            draftReplica.apply(stateOrDelta)
+            for (const replicaKey in clock) {
+              if (clock[replicaKey] > (lastClock[replicaKey] || 0)) {
+                lastClock[replicaKey] = clock[replicaKey]
+              }
+            }
+          } else {
+            deltasToApply.push({
+              clock,
+              delta: stateOrDelta
+            })
+          }
+        }
+      } catch (e) {
+        console.warn('readdir error', replicaDir, e)
+      }
+    }
+    console.log('Merged states value:', draftReplica.value().join(''))
+    console.log('Unsorted deltas to apply', deltasToApply)
+    const sortedDeltasToApply = [...deltasToApply] // FIXME: sort
+    console.log('Sorted deltas to apply', sortedDeltasToApply)
+    for (const { clock, delta } of deltasToApply) {
+      console.log('Applying delta', delta, clock)
+      draftReplica.apply(delta)
+      for (const replicaKey in clock) {
+        if (clock[replicaKey] > (lastClock[replicaKey] || 0)) {
+          lastClock[replicaKey] = clock[replicaKey]
+        }
+      }
+    }
+    console.log('Loaded value:', draftReplica.value().join(''))
+    console.log('Final clock', lastClock)
+    setReplica(draftReplica)
+    setDraft(draftReplica.value().join(''))
+    setClock(lastClock)
+    setState('loaded')
+  }
+
+  async function saveState (crdtState) {
     console.log('Save state', replicaDir)
     const thisDrive = beaker.hyperdrive.drive()
     try {
@@ -239,7 +333,7 @@ function Main () {
       }
     }
     await thisDrive.mkdir(replicaDir)
-    const crdtState = replica.state()
+    // const crdtState = replica.state()
     console.log('State', crdtState)
     const bin = encode(crdtState)
     const { version } = await beaker.hyperdrive.getInfo(`hyper://${key}`)
@@ -247,10 +341,39 @@ function Main () {
       [key]: version + 1
     }
     const outputFile = `${replicaDir}/${version + 1}`
-    await thisDrive.writeFile(outputFile, bin, { metadata: clock })
+    await thisDrive.writeFile(outputFile, bin, {
+      metadata: {
+        type: 'state',
+        ...clock
+      }
+    })
     setClock(clock)
     console.log('Wrote state:', outputFile, clock)
     setState('loaded')
+    // FIXME: update draft
+  }
+
+  async function saveDeltaBatch (encodedBatch, currentClock) {
+    console.log('Save delta batch', replicaDir)
+    const thisDrive = beaker.hyperdrive.drive()
+    const url = `hyper://${key}`
+    const info = await beaker.hyperdrive.getInfo(url)
+    console.log('Info', info)
+    const { version } = info
+    console.log('Version', version, url.slice(4))
+    const newClock = {
+      ...currentClock,
+      [key]: version + 1
+    }
+    const outputFile = `${replicaDir}/${version + 1}`
+    await thisDrive.writeFile(outputFile, encodedBatch, {
+      metadata: {
+        type: 'delta',
+        ...newClock
+      }
+    })
+    console.log('Wrote delta batch:', outputFile, newClock)
+    // FIXME: update draft
   }
 
   function changeDraft (event) {
