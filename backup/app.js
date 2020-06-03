@@ -262,6 +262,7 @@ function Main () {
     console.log('Replica dirs', replicaDirs)
     const lastClock = {}
     const deltasToApply = []
+    const allKeys = new Set()
     for (const dir of replicaDirs) {
       const replicaDir = `/replicas/${dir}/deltas`
       try {
@@ -279,18 +280,26 @@ function Main () {
           const binary = await thisDrive.readFile(file, {
             encoding: 'binary'
           })
+          for (const key in clock) {
+            clock[key] = Number(clock[key])
+          }
           console.log('Type', replicaDir, file, type)
-          console.log('Binary', replicaDir, file, binary)
+          console.log('Clock', replicaDir, file, clock)
+          // console.log('Binary', replicaDir, file, binary)
           const stateOrDelta = decode(binary)
           console.log('Decoded', replicaDir, file, stateOrDelta)
           if (type === 'state') {
             draftReplica.apply(stateOrDelta)
             for (const replicaKey in clock) {
+              allKeys.add(replicaKey)
               if (clock[replicaKey] > (lastClock[replicaKey] || 0)) {
                 lastClock[replicaKey] = clock[replicaKey]
               }
             }
           } else {
+            for (const replicaKey in clock) {
+              allKeys.add(replicaKey)
+            }
             deltasToApply.push({
               clock,
               delta: stateOrDelta
@@ -301,16 +310,58 @@ function Main () {
         console.warn('readdir error', replicaDir, e)
       }
     }
+    const lastStateClock = { ...lastClock }
     console.log('Merged states value:', draftReplica.value().join(''))
     console.log('Unsorted deltas to apply', deltasToApply)
-    const sortedDeltasToApply = [...deltasToApply] // FIXME: sort
+    console.log('All keys', allKeys)
+    const sortedDeltasToApply = [...deltasToApply].sort((a, b) => {
+      const clockA = { ...a.clock }
+      const clockB = { ...b.clock }
+      let after
+      let before
+      for (const key of [...allKeys]) {
+        if (!clockA[key]) clockA[key] = 0
+        if (!clockB[key]) clockB[key] = 0
+        if (clockA[key] > clockB[key]) {
+          after = true
+          if (before) break
+        }
+        if (clockA[key] < clockB[key]) {
+          before = true
+          if (after) break
+        }
+      }
+      console.log('A B after before', clockA, clockB, after, before)
+      if (before && after) {
+        // concurrent changes, return consistent sort order
+        for (const key of [...allKeys]) {
+          if (clockA[key] > clockB[key]) return 1
+          if (clockA[key] < clockB[key]) return -1
+        }
+        return 0
+      }
+      if (after) return 1
+      if (before) return -1
+      return 0
+    })
     console.log('Sorted deltas to apply', sortedDeltasToApply)
-    for (const { clock, delta } of deltasToApply) {
+    for (const { clock, delta } of sortedDeltasToApply) {
       console.log('Applying delta', delta, clock)
-      draftReplica.apply(delta)
-      for (const replicaKey in clock) {
-        if (clock[replicaKey] > (lastClock[replicaKey] || 0)) {
-          lastClock[replicaKey] = clock[replicaKey]
+      let skip
+      for (const key of allKeys) {
+        if (clock[key] < lastStateClock[key]) {
+          skip = true
+          continue
+        }
+      }
+      if (skip) {
+        console.log('Skipping')
+      } else {
+        draftReplica.apply(delta)
+        for (const replicaKey in clock) {
+          if (clock[replicaKey] > (lastClock[replicaKey] || 0)) {
+            lastClock[replicaKey] = clock[replicaKey]
+          }
         }
       }
     }
@@ -357,10 +408,17 @@ function Main () {
     console.log('Save delta batch', replicaDir)
     const thisDrive = beaker.hyperdrive.drive()
     const url = `hyper://${key}`
+    /*
     const info = await beaker.hyperdrive.getInfo(url)
+    */
+    // workaround for version being 'undefined'
+    const replicaDrive = await beaker.hyperdrive.drive(url)
+    const stat = await beaker.hyperdrive.stat('/')
+    const info = await replicaDrive.getInfo()
     console.log('Info', info)
     const { version } = info
     console.log('Version', version, url.slice(4))
+    if (!version) throw new Error("Couldn't determine version")
     const newClock = {
       ...currentClock,
       [key]: version + 1
